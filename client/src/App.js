@@ -64,6 +64,7 @@ const config = {
       image_url: { raw: {} },
       url: { raw: {} },
       price: { raw: {} },
+      release_date: { raw: {} },
     },
   },
 };
