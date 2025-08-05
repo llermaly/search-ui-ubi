@@ -6,6 +6,8 @@ import ElasticSearchAPIConnector from "@elastic/search-ui-elasticsearch-connecto
 import { Client } from "@elastic/elasticsearch";
 import { v4 as uuidv4 } from "uuid";
 
+const clientId = uuidv4(); // to maintain a constant client id
+
 const app = express();
 
 const PORT = process.env.PORT || 3001;
@@ -22,6 +24,7 @@ class UBIConnector extends ElasticSearchAPIConnector {
     const result = await super.onSearch(requestState, queryConfig);
 
     result.requestId = uuidv4();
+    result.clientId = clientId;
     console.log(`Request id: ${result.requestId}`)
 
     return result;
@@ -38,6 +41,7 @@ const connector = new UBIConnector(
     requestBody.ext = {
       ubi: {
         query_id: requestState.requestId,
+        client_id: requestState.clientId || clientId,
         user_query: requestState.searchTerm || "",
       },
     };
@@ -78,7 +82,7 @@ app.post("/api/autocomplete", async (req, res, next) => {
 app.post("/api/analytics", async (req, res, next) => {
   try {
     console.log(`Sending analytics for query_id: ${req.body.query_id}`)
-
+    req.body.client_id = clientId;
     await esClient.index({
       index: "ubi_events",
       body: req.body,

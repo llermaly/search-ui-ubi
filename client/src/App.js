@@ -17,12 +17,13 @@ const config = {
     requestState.requestId = uuidv4();
     return next(requestState, queryConfig);
   },
-  onResultClick: (r) => {
+  onResultClick: async (r) => {
+    const locationData = await getLocationData();
     const payload = {
       application: "search-ui",
       action_name: "click",
       query_id: r.requestId || "",
-      client_id: "getting_there",
+      client_id: r.clientId || "",
       timestamp: new Date().toISOString(),
       message_type: "CLICK_THROUGH",
       message: `Clicked ${r.result.name.raw}`,
@@ -34,6 +35,17 @@ const config = {
           position: {
             ordinal: r.resultIndexOnPage,
             page_depth: r.page,
+          },
+          device: getDeviceType(),
+          user: {
+            ip: locationData.ip,
+            city: locationData.city,
+            region: locationData.region,
+            country: locationData.country,
+            location: {
+              lat:locationData.latitude,
+              lon:locationData.longitude
+            }
           },
         },
       },
@@ -86,3 +98,29 @@ export default function App() {
     </SearchProvider>
   );
 }
+
+
+const getDeviceType = () => {
+  const userAgent = navigator.userAgent.toLowerCase();
+  
+  if (/tablet|ipad|playbook|silk/.test(userAgent)) {
+    return 'tablet';
+  }
+  if (/mobile|iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/.test(userAgent)) {
+    return 'mobile';
+  }
+  return 'desktop';
+};
+
+const getLocationData = async () => {
+  const response = await fetch('https://ipapi.co/json/');
+  const data = await response.json();
+  return {
+    ip: data.ip,
+    city: data.city,
+    region: data.region,
+    country: data.country_name,
+    latitude: data.latitude,
+    longitude: data.longitude
+  };
+};
